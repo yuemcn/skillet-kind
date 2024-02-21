@@ -1,0 +1,11 @@
+helm_charts:
+- name: prometheus
+  namespace: prometheus
+  repo: prometheus-community
+  url: https://prometheus-community.github.io/helm-charts
+  tgz: prometheus-25.13.0.tgz
+- name: grafana
+  namespace: grafana
+  repo: grafana
+  url: https://grafana.github.io/helm-charts
+  tgz: grafana-7.3.0.tgz
