@@ -43,7 +43,7 @@ The components of a cluster configuration file are as follows:
 - `nodes`: The number of control plane and worker nodes the cluster will have
 - `applications`: A list of the applications to be deployed to the cluster (currently all applications are created as deployments)
 
-Please not that applications have the following fields:
+Please note that applications have the following fields:
 - `name`: The name of the application
 - `namespace`: The namespace in which the application will reside
 - `replicas`: The number of deployment replicas the application will be deployed on
@@ -76,16 +76,3 @@ go run . delete --name $CLUSTER_NAME
 When a cluster is created, it comes pre-packaged with popular, essential helm charts to make it production ready. The following is a list of resources that are deployed upon cluster creation:
 - Prometheus
 - Grafana
-
-## Future Features
-
-### Major Features
-- Add ability to update existing clusters
-- Add user applications to cluster upon creation
-
-### Smaller Changes
-- Update function `ApplyDefaultResources` so that it sets the context to the newly created cluster
-- Add option to enable/disable certain resources
-- Add more helm charts to list of default resources
-- Allow applications to be deployed as other resources like cron jobs, daemon sets, etc.
-- Add instructions on installing dependencies to README
