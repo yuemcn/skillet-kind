@@ -1,10 +1,10 @@
 package main
 
 import (
-	"context"
 	"os"
-	"skillet/skillet-kind/cmd"
 
+	"context"
+	"skillet/skillet-kind/cmd"
 	"github.com/urfave/cli/v3"
 )
 
@@ -20,4 +20,5 @@ func main() {
 	}
 
 	cmd.Run(ctx, os.Args)
+
 }

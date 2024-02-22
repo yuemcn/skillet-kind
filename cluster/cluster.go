@@ -1,12 +1,17 @@
 package cluster
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"gopkg.in/yaml.v3"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
 )
 
 var (
@@ -32,13 +37,6 @@ type ClusterConfig struct {
 type NodesConfig struct {
 	ControlPlane int `yaml:"control_plane"`
 	Worker       int `yaml:"worker"`
-}
-
-type Application struct {
-	Name      string `yaml:"name"`
-	Namespace string `yaml:"namespace"`
-	Replicas  int    `yaml:"replicas"`
-	Image     string `yaml:"image"`
 }
 
 type KindConfig struct {
@@ -145,4 +143,30 @@ func (c *Cluster) parseConfig() (*ClusterConfig, error) {
 	}
 
 	return &config, nil
+}
+
+func createKubernetesClient() (*kubernetes.Clientset, error) {
+	var kubeconfig *string
+	if home := homedir.HomeDir(); home != "" {
+		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+	} else {
+		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+	}
+	flag.Parse()
+
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	if err != nil {
+		err = fmt.Errorf("error building configs for kubeconfig: %w", err)
+		fmt.Println(err)
+		return nil, err
+	}
+
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		err = fmt.Errorf("error creating clientset for config: %w", err)
+		fmt.Println(err)
+		return nil, err
+	}
+
+	return clientset, nil
 }

@@ -12,6 +12,7 @@ import (
 )
 
 func (c *Cluster) Create(ctx context.Context) error {
+
 	// get cluster name if using config
 	clusterConfig, err := c.parseConfig()
 	if err != nil {
@@ -53,6 +54,21 @@ func (c *Cluster) Create(ctx context.Context) error {
 	err = charts.ApplyDefaultResources(ctx, kubeContext)
 	if err != nil {
 		err = fmt.Errorf("error while applying default resources: %w", err)
+		fmt.Println(err)
+		return err
+	}
+
+	fmt.Println("Deploying user applications to cluster")
+	clientset, err := createKubernetesClient()
+	if err != nil {
+		err = fmt.Errorf("error setting up clientset: %w", err)
+		fmt.Println(err)
+		return err
+	}
+
+	err = c.DeployApplications(ctx, clientset)
+	if err != nil {
+		err = fmt.Errorf("error deploying applications: %w", err)
 		fmt.Println(err)
 		return err
 	}
