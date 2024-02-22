@@ -43,7 +43,7 @@ The components of a cluster configuration file are as follows:
 - `nodes`: The number of control plane and worker nodes the cluster will have
 - `applications`: A list of the applications to be deployed to the cluster (currently all applications are created as deployments)
 
-Please not that applications have the following fields:
+Please note that applications have the following fields:
 - `name`: The name of the application
 - `namespace`: The namespace in which the application will reside
 - `replicas`: The number of deployment replicas the application will be deployed on
