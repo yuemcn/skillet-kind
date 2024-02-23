@@ -1,0 +1,11 @@
+name: skillet-demo-cluster
+
+nodes:
+  control_plane: 2
+  worker: 3
+
+applications:
+- name: getting-started
+  namespace: getting-started-app
+  replicas: 2
+  image: hmcnelis/getting-started:latest
