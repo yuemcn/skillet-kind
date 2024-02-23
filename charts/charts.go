@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -32,48 +33,48 @@ type HelmChart struct {
 
 // apply default resources
 func ApplyDefaultResources(ctx context.Context, kubeContext string) error {
-	fmt.Println("parsing chart config")
+	slog.Info("parsing chart config")
 	chartConfig, err := parseChartConfig()
 	if err != nil {
 		err = fmt.Errorf("error while parsing chart config: %w", err)
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return err
 	}
 
-	fmt.Println("applying helm charts")
+	slog.Info("applying helm charts")
 	for _, chart := range chartConfig.HelmCharts {
 		settings := cli.New()
 
-		fmt.Println("creating action config for chart", chart.Name)
+		slog.Info("creating action config", "chart", chart.Name)
 		actionConfig := new(action.Configuration)
 		err := actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), os.Getenv(helmDriverEnv), log.Printf)
 		if err != nil {
 			err = fmt.Errorf("error initializing action for chart %s: %w", chart.Name, err)
-			fmt.Println(err)
+			slog.Error(err.Error())
 			return err
 		}
 
-		fmt.Println("locating chart", chart.Name)
+		slog.Info("locating chart", "chart", chart.Name)
 		client := action.NewInstall(actionConfig)
 		chartPath, err := client.LocateChart(chart.URL, settings)
 		if err != nil {
 			err = fmt.Errorf("error locating chart %s: %w", chart.Name, err)
-			fmt.Println(err)
+			slog.Error(err.Error())
 			return err
 		}
 
 		// TODO: Fix this part so it's not hard-coded. Currently this is a workaroud
 		chartPath = strings.TrimSuffix(chartPath, "helm-charts") + chart.TGZ
 
-		fmt.Println("loading chart", chart.Name)
+		slog.Info("loading chart", "chart", chart.Name)
 		helmChart, err := loader.Load(chartPath)
 		if err != nil {
 			err = fmt.Errorf("error loading chart %s: %w", chart.Name, err)
-			fmt.Println(err)
+			slog.Error(err.Error())
 			return err
 		}
 
-		fmt.Println("installing chart", chart.Name)
+		slog.Info("installing chart", "chart", chart.Name)
 		install := action.NewInstall(actionConfig)
 		install.ReleaseName = chart.Name
 		install.CreateNamespace = true
@@ -82,14 +83,14 @@ func ApplyDefaultResources(ctx context.Context, kubeContext string) error {
 		_, err = install.RunWithContext(ctx, helmChart, vals)
 		if err != nil {
 			err = fmt.Errorf("error installing chart %s: %w", chart.Name, err)
-			fmt.Println(err)
+			slog.Error(err.Error())
 			return err
 		}
 
-		fmt.Println("Successfully installed chart", chart.Name)
+		slog.Info("Successfully installed chart", "chart", chart.Name)
 	}
 
-	fmt.Println("Successfully installed all charts")
+	slog.Info("Successfully installed all charts")
 	return nil
 }
 
@@ -98,7 +99,7 @@ func parseChartConfig() (*DefaultResources, error) {
 	data, err := os.ReadFile(defaultResourcesPath)
 	if err != nil {
 		err = fmt.Errorf("an error occurred while reading chart config: %w", err)
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return nil, err
 	}
 
@@ -106,7 +107,7 @@ func parseChartConfig() (*DefaultResources, error) {
 	err = yaml.Unmarshal(data, &config)
 	if err != nil {
 		err = fmt.Errorf("an error occurred while parsing chart config: %w", err)
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return nil, err
 	}
 

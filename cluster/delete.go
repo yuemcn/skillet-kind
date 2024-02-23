@@ -3,6 +3,7 @@ package cluster
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -10,25 +11,25 @@ import (
 )
 
 func (c *Cluster) Delete(ctx context.Context) error {
-	fmt.Println("Checking if cluster exists")
+	slog.Info("Checking if cluster exists")
 	clusterExists, err := c.clusterExists()
 	if err != nil {
 		err = fmt.Errorf("an error occurred while checking if cluster exists: %w", err)
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return err
 	} else if !clusterExists {
 		err = status.Errorf(codes.NotFound, "could not find cluster with name %v", c.Name)
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return err
 	}
 
 	// delete cluster by name
-	fmt.Println("Deleting cluster", c.Name)
+	slog.Info("Deleting cluster", "cluster", c.Name)
 
 	kubeconfig, err := getKubeconfigPath()
 	if err != nil {
 		err = fmt.Errorf("error getting kubeconfig path: %w", err)
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return err
 	}
 
@@ -36,10 +37,10 @@ func (c *Cluster) Delete(ctx context.Context) error {
 	err = provider.Delete(c.Name, kubeconfig)
 	if err != nil {
 		err = fmt.Errorf("error deleting cluster: %w", err)
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return err
 	}
 
-	fmt.Println("Cluster has been successfully deleted")
+	slog.Info("Cluster has been successfully deleted")
 	return nil
 }

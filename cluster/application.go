@@ -3,6 +3,7 @@ package cluster
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
@@ -21,18 +22,18 @@ func (c *Cluster) DeployApplications(ctx context.Context, clientset *kubernetes.
 	clusterConfig, err := c.parseConfig()
 	if err != nil {
 		err = fmt.Errorf("error parsing cluster config: %w", err)
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return err
 	}
 
 	// read applications from cluster config
 	for _, app := range clusterConfig.Applications {
-		fmt.Println("Deploying application", app.Name)
+		slog.Info("Deploying application", "application", app.Name)
 		app.ApplyDeployment(ctx, clientset)
-		fmt.Println("Successfully deployed application", app.Name)
+		slog.Info("Successfully deployed application", "application", app.Name)
 	}
 
-	fmt.Println("Successfully deployed all applications to cluster")
+	slog.Info("Successfully deployed all applications to cluster")
 	return nil
 }
 
@@ -41,23 +42,23 @@ func (a *Application) ApplyDeployment(ctx context.Context, clientset *kubernetes
 	err := a.CreateNamespace(ctx, clientset)
 	if err != nil {
 		err = fmt.Errorf("error creating namespace for application %s: %w", a.Name, err)
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return err
 	}
 
 	err = a.CreateDeployment(ctx, clientset)
 	if err != nil {
 		err = fmt.Errorf("error creating deployment for application %s: %w", a.Name, err)
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return err
 	}
 
-	fmt.Println("Successfully applied deployment for application", a.Name)
+	slog.Info("Successfully applied deployment", "application", a.Name)
 	return nil
 }
 
 func (a *Application) CreateDeployment(ctx context.Context, clientset *kubernetes.Clientset) error {
-	fmt.Println("Creating deployment for application", a.Name)
+	slog.Info("Creating deployment", "application", a.Name)
 
 	deploymentsClient := clientset.AppsV1().Deployments(a.Namespace)
 
@@ -93,11 +94,11 @@ func (a *Application) CreateDeployment(ctx context.Context, clientset *kubernete
 	_, err := deploymentsClient.Create(ctx, deployment, metav1.CreateOptions{})
 	if err != nil {
 		err = fmt.Errorf("error creating deployment %s: %w", a.Name, err)
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return err
 	}
 
-	fmt.Println("Successfully created deployment for application", a.Name)
+	slog.Info("Successfully created deployment", "application", a.Name)
 	return nil
 }
 
@@ -105,12 +106,12 @@ func (a *Application) CreateNamespace(ctx context.Context, clientset *kubernetes
 	// check if namespace exists
 	_, err := clientset.CoreV1().Namespaces().Get(ctx, a.Namespace, metav1.GetOptions{})
 	if err == nil {
-		fmt.Println("namespace already exists. Skipping creation")
+		slog.Info("namespace already exists. Skipping creation")
 		return nil
 	}
 
 	// create namespace
-	fmt.Println("creating namespace", a.Namespace)
+	slog.Info("creating namespace", "namespace", a.Namespace)
 	namespaceSpec := &apiv1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: a.Namespace,
@@ -120,11 +121,11 @@ func (a *Application) CreateNamespace(ctx context.Context, clientset *kubernetes
 	ns, err := clientset.CoreV1().Namespaces().Create(ctx, namespaceSpec, metav1.CreateOptions{})
 	if err != nil {
 		err = fmt.Errorf("error creating namespace client for application %s: %w", a.Name, err)
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return err
 	}
 
-	fmt.Println("Successfully created namespace", ns)
+	slog.Info("Successfully created namespace", "namespace", ns.Name)
 	return nil
 }
 
