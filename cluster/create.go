@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"os"
 	"skillet/skillet-kind/charts"
 
 	"google.golang.org/grpc/codes"
@@ -87,26 +86,6 @@ func (c *Cluster) createWithName(ctx context.Context) error {
 
 // create a cluster given a config file
 func (c *Cluster) createWithConfig(ctx context.Context) error {
-	// create the cluster-config.yaml file
-	_, err := os.Stat(clusterConfigFilePath)
-	var file *os.File
-	if os.IsNotExist(err) {
-		file, err = os.Create(clusterConfigFilePath)
-		if err != nil {
-			err = fmt.Errorf("error creating kind config file: %w", err)
-			slog.Error(err.Error())
-			return err
-		}
-	}
-
-	endFile := func() {
-		file.Close()
-		os.Remove(clusterConfigFilePath)
-	}
-
-	defer endFile()
-
-	// create kind config
 	kindConfig, err := c.generateKindConfig()
 	if err != nil {
 		err = fmt.Errorf("an error occurred while parsing kind config: %w", err)
@@ -114,14 +93,7 @@ func (c *Cluster) createWithConfig(ctx context.Context) error {
 		return err
 	}
 
-	err = os.WriteFile(clusterConfigFilePath, []byte(kindConfig), 0666)
-	if err != nil {
-		err = fmt.Errorf("error writing kind configuration to file: %w", err)
-		slog.Error(err.Error())
-		return err
-	}
-
-	options := kind_cluster.CreateWithConfigFile(clusterConfigFilePath)
+	options := kind_cluster.CreateWithRawConfig([]byte(kindConfig))
 	provider := kind_cluster.NewProvider()
 	err = provider.Create(c.Name, options)
 	if err != nil {
