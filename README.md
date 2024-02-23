@@ -18,27 +18,7 @@ go run . [commands] [options]
 
 #### Create a cluster configuration file
 
-In order to create or update a cluster, a user must provide a cluster configuration YAML file. Below is a sample configuration:
-
-```
-name: kind-demo-cluster-01
-
-nodes:
-  control_plane: 2
-  worker: 3
-
-applications:
-- name: getting-started
-  namespace: getting-started-app
-  replicas: 2
-  image: hmcnelis/getting-started:latest
-- name: bank-web-app
-  namespace: bank-web-app
-  replicas: 2
-  image: hmcnelis/bank-web-app:2024.02.18.1
-```
-
-The components of a cluster configuration file are as follows:
+In order to create or update a cluster, a user must provide a cluster configuration YAML file. A sample cluster configuration file can be found in `examples`.The components of a cluster configuration file are as follows:
 - `name`: The name to give to the cluster
 - `nodes`: The number of control plane and worker nodes the cluster will have
 - `applications`: A list of the applications to be deployed to the cluster (currently all applications are created as deployments)
