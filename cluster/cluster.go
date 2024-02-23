@@ -3,6 +3,7 @@ package cluster
 import (
 	"flag"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -61,7 +62,7 @@ func (c *Cluster) clusterExists() (bool, error) {
 		clusterConfig, err := c.parseConfig()
 		if err != nil {
 			err = fmt.Errorf("error occurred while parsing config: %w", err)
-			fmt.Println(err)
+			slog.Error(err.Error())
 			return false, err
 		}
 
@@ -73,7 +74,7 @@ func (c *Cluster) clusterExists() (bool, error) {
 	contexts, err := listContexts()
 	if err != nil {
 		err = fmt.Errorf("error listing contexts: %w", err)
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return false, err
 	}
 
@@ -91,7 +92,7 @@ func (c *Cluster) generateKindConfig() (string, error) {
 	clusterConfig, err := c.parseConfig()
 	if err != nil {
 		err = fmt.Errorf("error generating kind config: %w", err)
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return "", err
 	}
 
@@ -119,7 +120,7 @@ func (c *Cluster) generateKindConfig() (string, error) {
 	config, err := yaml.Marshal(kindConfig)
 	if err != nil {
 		err = fmt.Errorf("error marshalling kind config: %w", err)
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return "", err
 	}
 
@@ -131,7 +132,7 @@ func (c *Cluster) parseConfig() (*ClusterConfig, error) {
 	data, err := os.ReadFile(c.ConfigFile)
 	if err != nil {
 		err = fmt.Errorf("an error occurred while reading cluster config: %w", err)
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return nil, err
 	}
 
@@ -139,7 +140,7 @@ func (c *Cluster) parseConfig() (*ClusterConfig, error) {
 	err = yaml.Unmarshal(data, &config)
 	if err != nil {
 		err = fmt.Errorf("an error occurred while parsing cluster config: %w", err)
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return nil, err
 	}
 
@@ -150,21 +151,21 @@ func createKubernetesClient() (*kubernetes.Clientset, error) {
 	kubeconfig, err := getKubeconfigPath()
 	if err != nil {
 		err = fmt.Errorf("error getting kubeconfig path: %w", err)
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return nil, err
 	}
 
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
 		err = fmt.Errorf("error building configs for kubeconfig: %w", err)
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return nil, err
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		err = fmt.Errorf("error creating clientset for config: %w", err)
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return nil, err
 	}
 
@@ -191,7 +192,7 @@ func listContexts() (map[string]*api.Context, error) {
 	config, err := kubeconfig.RawConfig()
 	if err != nil {
 		err = fmt.Errorf("error getting raw kubeconfig: %w", err)
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return nil, err
 	}
 
