@@ -15,12 +15,11 @@ import (
 )
 
 var (
-	kindPrefix            = "kind-"
-	kindConfigKind        = "Cluster"
-	kindApiVersion        = "kind.x-k8s.io/v1alpha4"
-	controlPlaneRole      = "control-plane"
-	workerRole            = "worker"
-	clusterConfigFilePath = "cluster-config.yaml"
+	kindPrefix       = "kind-"
+	kindConfigKind   = "Cluster"
+	kindApiVersion   = "kind.x-k8s.io/v1alpha4"
+	controlPlaneRole = "control-plane"
+	workerRole       = "worker"
 )
 
 type Cluster struct {
