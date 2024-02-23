@@ -93,55 +93,6 @@ func ApplyDefaultResources(ctx context.Context, kubeContext string) error {
 	return nil
 }
 
-// func ApplyDefaultResources(ctx context.Context, kubeContext string) error {
-// 	// set context to current context
-// 	command := exec.Command("kubectl", "config", "set-context", kubeContext)
-// 	fmt.Println(command)
-
-// 	err := command.Run()
-// 	if err != nil {
-// 		err = fmt.Errorf("error while setting context to current cluster: %w", err)
-// 		fmt.Println(err)
-// 		return err
-// 	}
-
-// 	chartConfig, err := parseChartConfig()
-// 	if err != nil {
-// 		err = fmt.Errorf("error while parsing chart config: %w", err)
-// 		fmt.Println(err)
-// 		return err
-// 	}
-
-// 	for _, chart := range chartConfig.HelmCharts {
-// 		command := exec.Command("helm", "repo", "add", chart.Repo, chart.URL)
-// 		err = command.Run()
-// 		if err != nil {
-// 			err = fmt.Errorf("error adding helm repo %s: %w", chart.Repo, err)
-// 			fmt.Println(err)
-// 			return err
-// 		}
-
-// 		command = exec.Command("helm", "repo", "update")
-// 		err = command.Run()
-// 		if err != nil {
-// 			err = fmt.Errorf("error updating helm repos: %w", err)
-// 			fmt.Println(err)
-// 			return err
-// 		}
-
-// 		chartName := chart.Repo + "/" + chart.Name
-// 		command = exec.Command("helm", "install", chart.Name, chartName, "--namespace", chart.Namespace)
-// 		err = command.Run()
-// 		if err != nil {
-// 			err = fmt.Errorf("error installing chart %s: %w", chart.Name, err)
-// 			fmt.Println(err)
-// 			return err
-// 		}
-// 	}
-
-// 	return nil
-// }
-
 // parse chart config into struct
 func parseChartConfig() (*DefaultResources, error) {
 	data, err := os.ReadFile(defaultResourcesPath)

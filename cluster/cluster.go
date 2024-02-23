@@ -4,13 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"gopkg.in/yaml.v3"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/util/homedir"
 )
 
@@ -58,26 +57,28 @@ func NewCluster(name string, config string) Cluster {
 
 // checks if a cluster exists or not
 func (c *Cluster) clusterExists() (bool, error) {
+	if c.Name == "" {
+		clusterConfig, err := c.parseConfig()
+		if err != nil {
+			err = fmt.Errorf("error occurred while parsing config: %w", err)
+			fmt.Println(err)
+			return false, err
+		}
+
+		c.Name = clusterConfig.Name
+	}
+
 	kubeContext := kindPrefix + c.Name
 
-	output, err := exec.Command("kubectl", "config", "get-contexts").Output()
+	contexts, err := listContexts()
 	if err != nil {
+		err = fmt.Errorf("error listing contexts: %w", err)
+		fmt.Println(err)
 		return false, err
 	}
 
-	for _, line := range strings.Split(string(output), "\n") {
-		fields := strings.Fields(line)
-		var name string
-		if len(fields) == 0 {
-			continue
-		}
-		if fields[0] == "*" {
-			name = fields[1]
-		} else {
-			name = fields[0]
-		}
-
-		if name == kubeContext {
+	for _, context := range contexts {
+		if context.Cluster == kubeContext {
 			return true, nil
 		}
 	}
@@ -146,15 +147,14 @@ func (c *Cluster) parseConfig() (*ClusterConfig, error) {
 }
 
 func createKubernetesClient() (*kubernetes.Clientset, error) {
-	var kubeconfig *string
-	if home := homedir.HomeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-	} else {
-		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+	kubeconfig, err := getKubeconfigPath()
+	if err != nil {
+		err = fmt.Errorf("error getting kubeconfig path: %w", err)
+		fmt.Println(err)
+		return nil, err
 	}
-	flag.Parse()
 
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
 		err = fmt.Errorf("error building configs for kubeconfig: %w", err)
 		fmt.Println(err)
@@ -169,4 +169,31 @@ func createKubernetesClient() (*kubernetes.Clientset, error) {
 	}
 
 	return clientset, nil
+}
+
+func getKubeconfigPath() (string, error) {
+	var kubeconfig *string
+	if home := homedir.HomeDir(); home != "" {
+		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+	} else {
+		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+	}
+	flag.Parse()
+
+	return *kubeconfig, nil
+}
+
+func listContexts() (map[string]*api.Context, error) {
+	configLoadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+	configOverrides := &clientcmd.ConfigOverrides{}
+	kubeconfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(configLoadingRules, configOverrides)
+
+	config, err := kubeconfig.RawConfig()
+	if err != nil {
+		err = fmt.Errorf("error getting raw kubeconfig: %w", err)
+		fmt.Println(err)
+		return nil, err
+	}
+
+	return config.Contexts, nil
 }

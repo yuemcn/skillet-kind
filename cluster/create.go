@@ -4,26 +4,14 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"skillet/skillet-kind/charts"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	kind_cluster "sigs.k8s.io/kind/pkg/cluster"
 )
 
 func (c *Cluster) Create(ctx context.Context) error {
-
-	// get cluster name if using config
-	clusterConfig, err := c.parseConfig()
-	if err != nil {
-		err = fmt.Errorf("error parsing cluster config: %w", err)
-		fmt.Println(err)
-		return err
-	}
-
-	if clusterConfig.Name != "" {
-		c.Name = clusterConfig.Name
-	}
 
 	fmt.Println("Checking if cluster exists")
 	clusterExists, err := c.clusterExists()
@@ -37,16 +25,37 @@ func (c *Cluster) Create(ctx context.Context) error {
 		return err
 	}
 
-	fmt.Println("Starting creation of cluster. Please note this may take time")
+	fmt.Println("Starting creation of cluster. Please note this may take some time")
+
 	if c.ConfigFile == "" {
 		err = c.createWithName(ctx)
+		if err != nil {
+			err = fmt.Errorf("error creation cluster with name: %w", err)
+			fmt.Println(err)
+			return err
+		}
 	} else {
 		err = c.createWithConfig(ctx)
-	}
-	if err != nil {
-		err = fmt.Errorf("error creating cluster: %w", err)
-		fmt.Println(err)
-		return err
+		if err != nil {
+			err = fmt.Errorf("error creating cluster with config: %w", err)
+			fmt.Println(err)
+			return err
+		}
+
+		fmt.Println("Deploying user applications to cluster")
+		clientset, err := createKubernetesClient()
+		if err != nil {
+			err = fmt.Errorf("error setting up clientset: %w", err)
+			fmt.Println(err)
+			return err
+		}
+
+		err = c.DeployApplications(ctx, clientset)
+		if err != nil {
+			err = fmt.Errorf("error deploying applications: %w", err)
+			fmt.Println(err)
+			return err
+		}
 	}
 
 	fmt.Println("Applying default resources to cluster")
@@ -58,29 +67,14 @@ func (c *Cluster) Create(ctx context.Context) error {
 		return err
 	}
 
-	fmt.Println("Deploying user applications to cluster")
-	clientset, err := createKubernetesClient()
-	if err != nil {
-		err = fmt.Errorf("error setting up clientset: %w", err)
-		fmt.Println(err)
-		return err
-	}
-
-	err = c.DeployApplications(ctx, clientset)
-	if err != nil {
-		err = fmt.Errorf("error deploying applications: %w", err)
-		fmt.Println(err)
-		return err
-	}
-
 	fmt.Println("Cluster has been successfully created")
 	return nil
 }
 
 // create a cluster given a cluster name
 func (c *Cluster) createWithName(ctx context.Context) error {
-	command := exec.Command("kind", "create", "cluster", "--name", c.Name)
-	err := command.Run()
+	provider := kind_cluster.NewProvider()
+	err := provider.Create(c.Name)
 	if err != nil {
 		err = fmt.Errorf("failed to created cluster: %w", err)
 		fmt.Println(err)
@@ -126,8 +120,9 @@ func (c *Cluster) createWithConfig(ctx context.Context) error {
 		return err
 	}
 
-	command := exec.Command("kind", "create", "cluster", "--config", clusterConfigFilePath, "--name", c.Name)
-	err = command.Run()
+	options := kind_cluster.CreateWithConfigFile(clusterConfigFilePath)
+	provider := kind_cluster.NewProvider()
+	err = provider.Create(c.Name, options)
 	if err != nil {
 		err = fmt.Errorf("failed to create cluster from config: %w", err)
 		fmt.Println(err)
