@@ -3,10 +3,10 @@ package cluster
 import (
 	"context"
 	"fmt"
-	"os/exec"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	kind_cluster "sigs.k8s.io/kind/pkg/cluster"
 )
 
 func (c *Cluster) Delete(ctx context.Context) error {
@@ -24,10 +24,18 @@ func (c *Cluster) Delete(ctx context.Context) error {
 
 	// delete cluster by name
 	fmt.Println("Deleting cluster", c.Name)
-	command := exec.Command("kind", "delete", "cluster", "--name", c.Name)
-	err = command.Run()
+
+	kubeconfig, err := getKubeconfigPath()
 	if err != nil {
-		err = fmt.Errorf("failed to delete cluster: %w", err)
+		err = fmt.Errorf("error getting kubeconfig path: %w", err)
+		fmt.Println(err)
+		return err
+	}
+
+	provider := kind_cluster.NewProvider()
+	err = provider.Delete(c.Name, kubeconfig)
+	if err != nil {
+		err = fmt.Errorf("error deleting cluster: %w", err)
 		fmt.Println(err)
 		return err
 	}
