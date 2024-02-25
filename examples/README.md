@@ -15,3 +15,8 @@ Please note that applications have the following fields:
 - `namespace`: The namespace in which the application will reside
 - `replicas`: The number of deployment replicas the application will be deployed on
 - `image`: The application's image
+
+Please note that the names for clusters, application names, and application namespaces must adhere to the following convention:
+- name must only contain lowercase letters, numbers, and hyphens
+- name must start with a lowercase letter
+- name must only end with a lowercase letter or number

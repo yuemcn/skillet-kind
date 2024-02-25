@@ -42,3 +42,19 @@ var DeleteCommand = &cli.Command{
 		return err
 	},
 }
+
+var ValidateCommand = &cli.Command{
+	Name:  "validate",
+	Usage: "validate a cluster configuration",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:  "file",
+			Usage: "The path to the file where the cluster configuration is stored",
+		},
+	},
+	Action: func(ctx context.Context, cmd *cli.Command) error {
+		cluster := cluster.NewCluster("", cmd.String("file"))
+		err := cluster.Validate(ctx)
+		return err
+	},
+}

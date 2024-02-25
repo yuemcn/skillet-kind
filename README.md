@@ -23,11 +23,17 @@ In order to create or update a cluster, a user must provide a cluster configurat
 - `nodes`: The number of control plane and worker nodes the cluster will have
 - `applications`: A list of the applications to be deployed to the cluster (currently all applications are created as deployments)
 
-Please note that applications have the following fields:
+User applications have the following fields:
 - `name`: The name of the application
 - `namespace`: The namespace in which the application will reside
 - `replicas`: The number of deployment replicas the application will be deployed on
 - `image`: The application's image
+
+Please note that the names for clusters, application names, and application namespaces must adhere to the following convention:
+- name must only contain lowercase letters, numbers, and hyphens
+- name must start with a lowercase letter
+- name must only end with a lowercase letter or number
+
 
 #### Create the cluster
 

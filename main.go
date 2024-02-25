@@ -17,6 +17,7 @@ func main() {
 		Commands: []*cli.Command{
 			cmd.CreateCommand,
 			cmd.DeleteCommand,
+			cmd.ValidateCommand,
 		},
 	}
 
