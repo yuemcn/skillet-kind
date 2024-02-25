@@ -25,6 +25,13 @@ func (c *Cluster) Create(ctx context.Context) error {
 		return err
 	}
 
+	// validate cluster configuration
+	if err = c.Validate(ctx); err != nil {
+		err = fmt.Errorf("an error occurred while validating cluster configuration: %w", err)
+		slog.Error(err.Error())
+		return err
+	}
+
 	slog.Info("Starting creation of cluster. Please note this may take some time")
 
 	if c.ConfigFile == "" {
