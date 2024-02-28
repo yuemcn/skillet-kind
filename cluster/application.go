@@ -16,6 +16,7 @@ type Application struct {
 	Namespace string `yaml:"namespace"`
 	Replicas  int    `yaml:"replicas"`
 	Image     string `yaml:"image"`
+	Type      string `yaml:"type"`
 }
 
 func (c *Cluster) DeployApplications(ctx context.Context, clientset *kubernetes.Clientset) error {
@@ -29,7 +30,16 @@ func (c *Cluster) DeployApplications(ctx context.Context, clientset *kubernetes.
 	// read applications from cluster config
 	for _, app := range clusterConfig.Applications {
 		slog.Info("Deploying application", "application", app.Name)
-		app.CreateDeployment(ctx, clientset)
+		switch app.Type {
+		case "deployment":
+			app.CreateDeployment(ctx, clientset)
+		case "daemonset":
+			app.CreateDaemonset(ctx, clientset)
+		default:
+			err = fmt.Errorf("application type must be one of [deployment, daemonset]")
+			slog.Error(err.Error())
+			return err
+		}
 		slog.Info("Successfully deployed application", "application", app.Name)
 	}
 
@@ -87,6 +97,59 @@ func (a *Application) CreateDeployment(ctx context.Context, clientset *kubernete
 	}
 
 	slog.Info("Successfully created deployment", "application", a.Name)
+	return nil
+}
+
+func (a *Application) CreateDaemonset(ctx context.Context, clientset *kubernetes.Clientset) error {
+	slog.Info("Creating daemonset", "application", a.Name)
+	err := a.CreateNamespace(ctx, clientset)
+	if err != nil {
+		err = fmt.Errorf("error creating namespace for application %s: %w", a.Name, err)
+		slog.Error(err.Error())
+		return err
+	}
+
+	slog.Info("Creating deployment", "application", a.Name)
+
+	daemonsetsClient := clientset.AppsV1().DaemonSets(a.Namespace)
+
+	daemonset := &appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: a.Name,
+		},
+		Spec: appsv1.DaemonSetSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"app": a.Name,
+				},
+			},
+			Template: apiv1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app": a.Name,
+					},
+				},
+				Spec: apiv1.PodSpec{
+					Containers: []apiv1.Container{
+						{
+							Name:  a.Name,
+							Image: a.Image,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	// _, err = deploymentsClient.Create(ctx, deployment, metav1.CreateOptions{})
+	_, err = daemonsetsClient.Create(ctx, daemonset, metav1.CreateOptions{})
+	if err != nil {
+		err = fmt.Errorf("error creating daemonset %s: %w", a.Name, err)
+		slog.Error(err.Error())
+		return err
+	}
+
+	slog.Info("Successfully created daemonset", "application", a.Name)
 	return nil
 }
 

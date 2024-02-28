@@ -72,8 +72,21 @@ func (c *Cluster) Validate(ctx context.Context) error {
 			return err
 		}
 
-		if app.Replicas < 1 {
-			err = status.Errorf(codes.FailedPrecondition, "application replicas must be at least 1")
+		switch app.Type {
+		case "daemonset":
+			if app.Replicas > 0 {
+				err = status.Errorf(codes.FailedPrecondition, "replicas cannot be specified for daemonsets")
+				slog.Error(err.Error())
+				return err
+			}
+		case "deployment":
+			if app.Replicas < 1 {
+				err = status.Errorf(codes.FailedPrecondition, "application replicas must be at least 1")
+				slog.Error(err.Error())
+				return err
+			}
+		default:
+			err = status.Errorf(codes.FailedPrecondition, "application type must be one of [deployment, daemonset]")
 			slog.Error(err.Error())
 			return err
 		}

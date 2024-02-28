@@ -7,5 +7,10 @@ nodes:
 applications:
 - name: getting-started
   namespace: getting-started-app
-  replicas: 2
   image: hmcnelis/getting-started:latest
+  type: daemonset
+- name: bank-web-app
+  namespace: bank-web-app-ns
+  replicas: 2
+  image: hmcnelis/bank-web-app:2024.02.18.1
+  type: deployment
