@@ -25,24 +25,24 @@ func (c *Cluster) Create(ctx context.Context) error {
 		return err
 	}
 
-	// validate cluster configuration
-	if err = c.Validate(ctx); err != nil {
-		err = fmt.Errorf("an error occurred while validating cluster configuration: %w", err)
-		slog.Error(err.Error())
-		return err
-	}
-
 	slog.Info("Starting creation of cluster. Please note this may take some time")
 
 	if c.ConfigFile == "" {
-		err = c.createWithName(ctx)
+		err = c.createWithName()
 		if err != nil {
 			err = fmt.Errorf("error creation cluster with name: %w", err)
 			slog.Error(err.Error())
 			return err
 		}
 	} else {
-		err = c.createWithConfig(ctx)
+		// validate cluster configuration
+		if err = c.Validate(ctx); err != nil {
+			err = fmt.Errorf("an error occurred while validating cluster configuration: %w", err)
+			slog.Error(err.Error())
+			return err
+		}
+
+		err = c.createWithConfig()
 		if err != nil {
 			err = fmt.Errorf("error creating cluster with config: %w", err)
 			slog.Error(err.Error())
@@ -79,7 +79,7 @@ func (c *Cluster) Create(ctx context.Context) error {
 }
 
 // create a cluster given a cluster name
-func (c *Cluster) createWithName(ctx context.Context) error {
+func (c *Cluster) createWithName() error {
 	provider := kind_cluster.NewProvider()
 	err := provider.Create(c.Name)
 	if err != nil {
@@ -92,7 +92,7 @@ func (c *Cluster) createWithName(ctx context.Context) error {
 }
 
 // create a cluster given a config file
-func (c *Cluster) createWithConfig(ctx context.Context) error {
+func (c *Cluster) createWithConfig() error {
 	kindConfig, err := c.generateKindConfig()
 	if err != nil {
 		err = fmt.Errorf("an error occurred while parsing kind config: %w", err)

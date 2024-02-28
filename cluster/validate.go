@@ -122,7 +122,9 @@ func imageExists(ctx context.Context, image string) error {
 
 	_, _, err = cli.ImageInspectWithRaw(ctx, image)
 	if err != nil {
-		return status.Errorf(codes.NotFound, "image does not exist")
+		err = fmt.Errorf("error finding image %s: %w", image, err)
+		slog.Error(err.Error())
+		return err
 	}
 
 	return nil
