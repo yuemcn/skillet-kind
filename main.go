@@ -21,5 +21,10 @@ func main() {
 		},
 	}
 
-	cmd.Run(ctx, os.Args)
+	err := cmd.Run(ctx, os.Args)
+	if err != nil {
+		os.Exit(1)
+	}
+
+	os.Exit(0)
 }
